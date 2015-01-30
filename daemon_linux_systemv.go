@@ -6,6 +6,7 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
@@ -50,8 +51,7 @@ func (linux *systemVRecord) checkRunning() (string, bool) {
 	return "Service is stoped", false
 }
 
-// Install the service
-func (linux *systemVRecord) Install() (string, error) {
+func (linux *systemVRecord) InstallFromPath(thePath string) (string, error) {
 	installAction := "Install " + linux.description + ":"
 
 	if checkPrivileges() == false {
@@ -70,9 +70,12 @@ func (linux *systemVRecord) Install() (string, error) {
 	}
 	defer file.Close()
 
-	execPatch, err := executablePath(linux.name)
+	isexec, err := IsExecutable(thePath)
 	if err != nil {
 		return installAction + failed, err
+	}
+	if !isexec {
+		return installAction + failed, fmt.Errorf("target is not executable: %s", thePath)
 	}
 
 	templ, err := template.New("systemVConfig").Parse(systemVConfig)
@@ -84,7 +87,7 @@ func (linux *systemVRecord) Install() (string, error) {
 		file,
 		&struct {
 			Name, Description, Path string
-		}{linux.name, linux.description, execPatch},
+		}{linux.name, linux.description, thePath},
 	); err != nil {
 		return installAction + failed, err
 	}
@@ -105,6 +108,17 @@ func (linux *systemVRecord) Install() (string, error) {
 	}
 
 	return installAction + success, nil
+}
+
+// Install the service
+func (linux *systemVRecord) Install() (string, error) {
+	installAction := "Install " + linux.description + ":"
+
+	execPatch, err := executablePath(linux.name)
+	if err != nil {
+		return installAction + failed, err
+	}
+	return linux.InstallFromPath(execPatch)
 }
 
 // Remove the service

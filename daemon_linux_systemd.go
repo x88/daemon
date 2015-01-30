@@ -6,6 +6,7 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
@@ -50,8 +51,7 @@ func (linux *systemDRecord) checkRunning() (string, bool) {
 	return "Service is stoped", false
 }
 
-// Install the service
-func (linux *systemDRecord) Install() (string, error) {
+func (linux *systemDRecord) InstallFromPath(thePath string) (string, error) {
 	installAction := "Install " + linux.description + ":"
 
 	if checkPrivileges() == false {
@@ -70,9 +70,12 @@ func (linux *systemDRecord) Install() (string, error) {
 	}
 	defer file.Close()
 
-	execPatch, err := executablePath(linux.name)
+	isexec, err := IsExecutable(thePath)
 	if err != nil {
 		return installAction + failed, err
+	}
+	if !isexec {
+		return installAction + failed, fmt.Errorf("target is not executable: %s", thePath)
 	}
 
 	templ, err := template.New("systemDConfig").Parse(systemDConfig)
@@ -84,7 +87,7 @@ func (linux *systemDRecord) Install() (string, error) {
 		file,
 		&struct {
 			Name, Description, Path string
-		}{linux.name, linux.description, execPatch},
+		}{linux.name, linux.description, thePath},
 	); err != nil {
 		return installAction + failed, err
 	}
@@ -98,6 +101,62 @@ func (linux *systemDRecord) Install() (string, error) {
 	}
 
 	return installAction + success, nil
+}
+
+// Install the service
+func (linux *systemDRecord) Install() (string, error) {
+	installAction := "Install " + linux.description + ":"
+
+	execPatch, err := executablePath(linux.name)
+	if err != nil {
+		return installAction + failed, err
+	}
+	return linux.InstallFromPath(execPatch)
+
+	// if checkPrivileges() == false {
+	// 	return installAction + failed, errors.New(rootPrivileges)
+	// }
+
+	// srvPath := linux.servicePath()
+
+	// if linux.checkInstalled() == true {
+	// 	return installAction + failed, errors.New(linux.description + " already installed")
+	// }
+
+	// file, err := os.Create(srvPath)
+	// if err != nil {
+	// 	return installAction + failed, err
+	// }
+	// defer file.Close()
+
+	// execPatch, err := executablePath(linux.name)
+	// if err != nil {
+	// 	return installAction + failed, err
+	// }
+
+	// templ, err := template.New("systemDConfig").Parse(systemDConfig)
+	// if err != nil {
+	// 	return installAction + failed, err
+	// }
+
+	// if err := templ.Execute(
+	// 	file,
+	// 	&struct {
+	// 		Name, Description, Path string
+	// 	}{linux.name, linux.description, execPatch},
+	// ); err != nil {
+	// 	return installAction + failed, err
+	// }
+
+	// if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
+	// 	return installAction + failed, err
+	// }
+
+	// if err := exec.Command("systemctl", "enable", linux.name+".service").Run(); err != nil {
+	// 	return installAction + failed, err
+	// }
+
+	// return installAction + success, nil
 }
 
 // Remove the service
