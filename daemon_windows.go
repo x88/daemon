@@ -7,7 +7,12 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 )
+
+//TODO: on windws, color code is not working.
 
 // windowsRecord - standard record (struct) for windows version of daemon package
 type windowsRecord struct {
@@ -30,14 +35,12 @@ func (windows *windowsRecord) Install() (string, error) {
 // Remove the service
 func (windows *windowsRecord) Remove() (string, error) {
 	removeAction := "Removing " + windows.description + ":"
-
 	return removeAction + failed, errors.New("windows daemon is not supported")
 }
 
 // Start the service
 func (windows *windowsRecord) Start() (string, error) {
 	startAction := "Starting " + windows.description + ":"
-
 	return startAction + failed, errors.New("windows daemon is not supported")
 }
 
@@ -52,4 +55,33 @@ func (windows *windowsRecord) Stop() (string, error) {
 func (windows *windowsRecord) Status() (string, error) {
 
 	return "Status could not defined", errors.New("windows daemon is not supported")
+}
+
+// Get executable path
+func execPath() (string, error) {
+	prog := os.Args[0]
+	p, err := filepath.Abs(prog)
+	if err != nil {
+		return "", err
+	}
+	fi, err := os.Stat(p)
+	if err == nil {
+		if !fi.Mode().IsDir() {
+			return p, nil
+		}
+		err = fmt.Errorf("%s is directory", p)
+	}
+	if filepath.Ext(p) == "" {
+		p += ".exe"
+		fi, err := os.Stat(p)
+		if err == nil {
+			if !fi.Mode().IsDir() {
+				return p, nil
+			}
+			err = fmt.Errorf("%s is directory", p)
+		}
+	}
+	return "", err
+
+	// return filepath.Abs(os.Args[0])
 }

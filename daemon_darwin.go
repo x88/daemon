@@ -7,6 +7,7 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -62,8 +63,8 @@ func (darwin *darwinRecord) checkRunning() (string, bool) {
 	return "Service is stopped", false
 }
 
-// Install the service
-func (darwin *darwinRecord) Install() (string, error) {
+// install the service from /path/to/executable
+func (darwin *darwinRecord) InstallFromPath(thePath string) (string, error) {
 	installAction := "Install " + darwin.description + ":"
 
 	if checkPrivileges() == false {
@@ -82,9 +83,12 @@ func (darwin *darwinRecord) Install() (string, error) {
 	}
 	defer file.Close()
 
-	execPatch, err := executablePath(darwin.name)
+	isexec, err := IsExecutable(thePath)
 	if err != nil {
 		return installAction + failed, err
+	}
+	if !isexec {
+		return installAction + failed, fmt.Errorf("target is not executable: %s", thePath)
 	}
 
 	templ, err := template.New("propertyList").Parse(propertyList)
@@ -96,12 +100,23 @@ func (darwin *darwinRecord) Install() (string, error) {
 		file,
 		&struct {
 			Name, Path string
-		}{darwin.name, execPatch},
+		}{darwin.name, thePath},
 	); err != nil {
 		return installAction + failed, err
 	}
 
 	return installAction + success, nil
+}
+
+// Install the service
+func (darwin *darwinRecord) Install() (string, error) {
+	installAction := "Install " + darwin.description + ":"
+
+	execPatch, err := executablePath(darwin.name)
+	if err != nil {
+		return installAction + failed, err
+	}
+	return darwin.InstallFromPath(execPatch)
 }
 
 // Remove the service
