@@ -48,7 +48,7 @@ func (linux *systemVRecord) checkRunning() (string, bool) {
 		}
 	}
 
-	return "Service is stoped", false
+	return "Service is stopped", false
 }
 
 func (linux *systemVRecord) InstallFromPath(thePath string) (string, error) {
