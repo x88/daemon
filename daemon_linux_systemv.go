@@ -1,4 +1,4 @@
-// Copyright 2014 Igor Dolzhikov. All rights reserved.
+// Copyright 2015 Igor Dolzhikov. All rights reserved.
 // Use of this source code is governed by
 // license that can be found in the LICENSE file.
 
@@ -242,7 +242,7 @@ fi
 exec="{{.Path}}"
 servname="{{.Description}}"
 
-proc=$(basename $0)
+proc=$(basename $exec)
 pidfile="/var/run/$proc.pid"
 lockfile="/var/lock/subsys/$proc"
 stdoutlog="/var/log/$proc.log"
@@ -258,7 +258,7 @@ start() {
     if ! [ -f $pidfile ]; then
         printf "Starting $servname:\t"
         echo "$(date)" >> $stdoutlog
-        $exec >> $stderrlog 2>> $stdoutlog &
+        $exec >> $stdoutlog 2>> $stderrlog &
         echo $! > $pidfile
         touch $lockfile
         success

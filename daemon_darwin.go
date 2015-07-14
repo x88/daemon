@@ -1,4 +1,4 @@
-// Copyright 2014 Igor Dolzhikov. All rights reserved.
+// Copyright 2015 Igor Dolzhikov. All rights reserved.
 // Use of this source code is governed by
 // license that can be found in the LICENSE file.
 
@@ -60,7 +60,7 @@ func (darwin *darwinRecord) checkRunning() (string, bool) {
 		}
 	}
 
-	return "Service is stoped", false
+	return "Service is stopped", false
 }
 
 // install the service from /path/to/executable
