@@ -235,9 +235,19 @@ var systemVConfig = `#! /bin/sh
 #
 # Source function library.
 #
+
+# LSB support
+is_lsb=false
+
 if [ -f /etc/rc.d/init.d/functions ]; then
     . /etc/rc.d/init.d/functions
+else
+    if [ -f /lib/lsb/init-functions ]; then
+        is_lsb=true
+        . /lib/lsb/init-functions
+    fi
 fi
+
 
 exec="{{.Path}}"
 servname="{{.Description}}"
@@ -261,10 +271,18 @@ start() {
         $exec >> $stdoutlog 2>> $stderrlog &
         echo $! > $pidfile
         touch $lockfile
-        success
+        if [ "$is_lsb" = true ]; then
+                log_success_msg "OK"
+        else
+                success
+        fi
         echo
     else
-        failure
+        if [ "$is_lsb" = true ]; then
+            log_failure_msg "Failure"
+        else
+        	failure
+        fi
         echo
         printf "$pidfile still exists...\n"
         exit 7
@@ -276,7 +294,7 @@ stop() {
     killproc -p $pidfile $proc
     retval=$?
     echo
-    [ $retval -eq 0 ] && rm -f $lockfile
+    [ $retval -eq 0 ] && rm -f $lockfile $pidfile
     return $retval
 }
 
@@ -286,7 +304,11 @@ restart() {
 }
 
 rh_status() {
-    status -p $pidfile $proc
+    if [ "$is_lsb" = true ]; then
+        status_of_proc -p $pidfile $proc
+    else
+        status -p $pidfile $proc
+    fi
 }
 
 rh_status_q() {
