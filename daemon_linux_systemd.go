@@ -246,6 +246,7 @@ func (linux *systemDRecord) Status() (string, error) {
 
 var systemDConfig = `[Unit]
 Description={{.Description}}
+After=network.target
 
 [Service]
 PIDFile=/var/run/{{.Name}}.pid
