@@ -252,7 +252,10 @@ After=network.target
 PIDFile=/var/run/{{.Name}}.pid
 ExecStartPre=/bin/rm -f /var/run/{{.Name}}.pid
 ExecStart={{.Path}}
-Restart=on-abort
+TimeoutStartSec=30s
+Restart=on-failure
+RestartSec=30
+
 
 [Install]
 WantedBy=multi-user.target
