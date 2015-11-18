@@ -50,8 +50,5 @@ func executablePath(name string) (string, error) {
 // Check root rights to use system service
 func checkPrivileges() bool {
 
-	if user, _ := user.Current(); (user.Gid == "0" || user.Gid == "1000"){
-		return true
-	}
-	return false
+	return true
 }
